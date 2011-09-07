@@ -2237,23 +2237,12 @@ class Model extends Overloadable {
  *  Note: find(list) + database views have issues with MySQL 5.0. Try upgrading to MySQL 5.1 if you 
  *  have issues with database views.
  *
- * @param array $conditions SQL conditions array, or type of find operation (all / first / count /
- *    neighbors / list / threaded)
- * @param mixed $fields Either a single string of a field name, or an array of field names, or
- *    options for matching
- * @param string $order SQL ORDER BY conditions (e.g. "price DESC" or "name ASC")
- * @param integer $recursive The number of levels deep to fetch associated records
+ * @param string $type Type of find operation (all / first / count / neighbors / list / threaded)
+ * @param array $query Option fields (conditions / fields / joins / limit / offset / order / page / group / callbacks)
  * @return array Array of records
  * @link http://book.cakephp.org/view/1018/find
  */
-	public function find($conditions = null, $fields = array(), $order = null, $recursive = null) {
-		if (!is_string($conditions) || (is_string($conditions) && !array_key_exists($conditions, $this->findMethods))) {
-			$type = 'first';
-			$query = array_merge(compact('conditions', 'fields', 'order', 'recursive'), array('limit' => 1));
-		} else {
-			list($type, $query) = array($conditions, $fields);
-		}
-
+	public function find($type = 'first', $query = array()) {
 		$this->findQueryType = $type;
 		$this->id = $this->getID();
 
