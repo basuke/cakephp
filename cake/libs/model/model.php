@@ -634,27 +634,15 @@ class Model extends Object {
 		}
 
 		if (is_subclass_of($this, 'AppModel')) {
-			$appVars = get_class_vars('AppModel');
 			$merge = array('findMethods');
-
 			if ($this->actsAs !== null || $this->actsAs !== false) {
 				$merge[] = 'actsAs';
 			}
 			$parentClass = get_parent_class($this);
-			if (strtolower($parentClass) !== 'appmodel') {
-				$parentVars = get_class_vars($parentClass);
-				foreach ($merge as $var) {
-					if (isset($parentVars[$var]) && !empty($parentVars[$var])) {
-						$appVars[$var] = Set::merge($appVars[$var], $parentVars[$var]);
-					}
-				}
+			if ($parentClass !== 'AppModel') {
+				$this->_mergeVars($merge, $parentClass);
 			}
-
-			foreach ($merge as $var) {
-				if (isset($appVars[$var]) && !empty($appVars[$var]) && is_array($this->{$var})) {
-					$this->{$var} = Set::merge($appVars[$var], $this->{$var});
-				}
-			}
+			$this->_mergeVars($merge, 'AppModel');
 		}
 		$this->Behaviors = new BehaviorCollection();
 
