@@ -1201,7 +1201,7 @@ class Model extends Object {
 			$db = $this->getDataSource();
 			$db->cacheSources = ($this->cacheSources && $db->cacheSources);
 			if (method_exists($db, 'describe') && $this->useTable !== false) {
-				$this->_schema = $db->describe($this, $field);
+				$this->_schema = $db->describe($this);
 			} elseif ($this->useTable === false) {
 				$this->_schema = array();
 			}
@@ -1559,7 +1559,7 @@ class Model extends Object {
 
 		if ($options['callbacks'] === true || $options['callbacks'] === 'before') {
 			$result = $this->Behaviors->trigger('beforeSave', array(&$this, $options), array(
-				'break' => true, 'breakOn' => false
+				'break' => true, 'breakOn' => array(false, null)
 			));
 			if (!$result || !$this->beforeSave($options)) {
 				$this->whitelist = $_whitelist;
@@ -2183,7 +2183,7 @@ class Model extends Object {
 			$filters = $this->Behaviors->trigger(
 				'beforeDelete',
 				array(&$this, $cascade),
-				array('break' => true, 'breakOn' => false)
+				array('break' => true, 'breakOn' => array(false, null))
 			);
 			if (!$filters || !$this->exists()) {
 				return false;
@@ -2479,7 +2479,7 @@ class Model extends Object {
 		$query = array_merge(
 			array(
 				'conditions' => null, 'fields' => null, 'joins' => array(), 'limit' => null,
-				'offset' => null, 'order' => null, 'page' => null, 'group' => null, 'callbacks' => true,
+				'offset' => null, 'order' => null, 'page' => 1, 'group' => null, 'callbacks' => true,
 			),
 			(array)$query
 		);
@@ -2505,8 +2505,9 @@ class Model extends Object {
 			$return = $this->Behaviors->trigger(
 				'beforeFind',
 				array(&$this, $query),
-				array('break' => true, 'breakOn' => false, 'modParams' => true
-			));
+				array('break' => true, 'breakOn' => array(false, null), 'modParams' => 1)
+			);
+
 			$query = (is_array($return)) ? $return : $query;
 
 			if ($return === false) {
@@ -2649,7 +2650,6 @@ class Model extends Object {
  */
 	protected function _findNeighbors($state, $query, $results = array()) {
 		if ($state === 'before') {
-			$query = array_merge(array('recursive' => 0), $query);
 			extract($query);
 			$conditions = (array)$conditions;
 			if (isset($field) && isset($value)) {
@@ -2753,7 +2753,7 @@ class Model extends Object {
 		$return = $this->Behaviors->trigger(
 			'afterFind',
 			array(&$this, $results, $primary),
-			array('modParams' => true)
+			array('modParams' => 1)
 		);
 		if ($return !== true) {
 			$results = $return;
@@ -2780,7 +2780,7 @@ class Model extends Object {
 
 		foreach ($this->_associations as $type) {
 			foreach ($this->{$type} as $key => $name) {
-				if (!empty($this->{$key}->__backAssociation)) {
+				if (property_exists($this, $key) && !empty($this->{$key}->__backAssociation)) {
 					$this->{$key}->resetAssociations();
 				}
 			}
@@ -2926,7 +2926,7 @@ class Model extends Object {
 				'allowEmpty' => null,
 				'required' => null,
 				'rule' => 'blank',
-				'last' => false,
+				'last' => true,
 				'on' => null
 			);
 
