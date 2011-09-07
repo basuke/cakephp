@@ -26,10 +26,6 @@ App::import('Core', array('ClassRegistry', 'Validation', 'Set', 'String'));
 App::import('Model', 'ModelBehavior', false);
 App::import('Model', 'ConnectionManager', false);
 
-if (!class_exists('Overloadable')) {
-	require LIBS . 'overloadable.php';
-}
-
 /**
  * Object-relational mapper.
  *
@@ -41,7 +37,7 @@ if (!class_exists('Overloadable')) {
  * @package       Cake.Model
  * @link          http://book.cakephp.org/view/1000/Models
  */
-class Model extends Overloadable {
+class Model extends Object {
 
 /**
  * The name of the DataSource connection that this Model uses
@@ -846,8 +842,8 @@ class Model extends Overloadable {
  *
  * @param string $assoc Association name
  * @param string $className Class name
- * @deprecated $this->$className use $this->$assoc instead. $assoc is the 'key' in the associations array;
- * 	examples: var $hasMany = array('Assoc' => array('className' => 'ModelName'));
+ * @param string $plugin name of the plugin where $className is located
+ * 	examples: public $hasMany = array('Assoc' => array('className' => 'ModelName'));
  * 					usage: $this->Assoc->modelMethods();
  *
  * 				public $hasMany = array('ModelName');
@@ -966,7 +962,7 @@ class Model extends Overloadable {
 		$db = ConnectionManager::getDataSource($this->useDbConfig);
 		$db->cacheSources = ($this->cacheSources && $db->cacheSources);
 
-		if ($db->isInterfaceSupported('listSources')) {
+		if (method_exists($db, 'listSources')) {
 			$sources = $db->listSources();
 			if (is_array($sources) && !in_array(strtolower($this->tablePrefix . $tableName), array_map('strtolower', $sources))) {
 				throw new MissingTableException(array(
@@ -1122,7 +1118,7 @@ class Model extends Overloadable {
 		if (!is_array($this->_schema) || $field === true) {
 			$db = $this->getDataSource();
 			$db->cacheSources = ($this->cacheSources && $db->cacheSources);
-			if ($db->isInterfaceSupported('describe') && $this->useTable !== false) {
+			if (method_exists($db, 'describe') && $this->useTable !== false) {
 				$this->_schema = $db->describe($this, $field);
 			} elseif ($this->useTable === false) {
 				$this->_schema = array();
