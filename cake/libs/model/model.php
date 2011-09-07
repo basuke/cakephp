@@ -2035,15 +2035,25 @@ class Model extends Object {
 			$this->_deleteLinks($id);
 			$this->id = $id;
 
+			$updateCounterCache = false;
 			if (!empty($this->belongsTo)) {
+				foreach ($this->belongsTo as $parent => $assoc) {
+					if (!empty($assoc['counterCache'])) {
+						$updateCounterCache = true;
+						break;
+					}
+				}
+
 				$keys = $this->find('first', array(
 					'fields' => $this->_collectForeignKeys(),
 					'conditions' => array($this->alias . '.' . $this->primaryKey => $id),
+					'recursive' => -1,
+					'callbacks' => false
 				));
 			}
 
 			if ($db->delete($this, array($this->alias . '.' . $this->primaryKey => $id))) {
-				if (!empty($this->belongsTo)) {
+				if ($updateCounterCache) {
 					$this->updateCounterCache($keys[$this->alias]);
 				}
 				$this->Behaviors->trigger('afterDelete', array(&$this));
@@ -2111,6 +2121,7 @@ class Model extends Object {
 				'conditions' => array_merge(array($this->{$joinModel}->escapeField($data['foreignKey']) => $id)),
 				'fields' => $this->{$joinModel}->primaryKey,
 				'recursive' => -1,
+				'callbacks' => false
 			));
 			if (!empty($records)) {
 				foreach ($records as $record) {
