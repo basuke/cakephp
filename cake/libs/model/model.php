@@ -2971,6 +2971,15 @@ class Model extends Object {
 	}
 
 /**
+ * Get associations
+ *
+ * @return array
+ */
+	public function associations() {
+		return $this->_associations;
+	}
+
+/**
  * Gets all the models with which this model is associated.
  *
  * @param string $type Only result associations of this type
