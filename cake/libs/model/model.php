@@ -239,13 +239,6 @@ class Model extends Object {
 	public $tableToModel = array();
 
 /**
- * Whether or not to log transactions for this model.
- *
- * @var boolean
- */
-	public $logTransactions = false;
-
-/**
  * Whether or not to cache queries for this model.  This enables in-memory
  * caching only, the results are not stored beyond the current request.
  *
@@ -557,20 +550,6 @@ class Model extends Object {
  * @var integer
  */
 	protected $_insertID = null;
-
-/**
- * The number of records returned by the last query.
- *
- * @var integer
- */
-	public $__numRows = null;
-
-/**
- * The number of records affected by the last query.
- *
- * @var integer
- */
-	public $__affectedRows = null;
 
 /**
  * List of valid finder method options, supplied as the first parameter to find().
