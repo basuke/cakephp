@@ -2118,8 +2118,8 @@ class Model extends Object {
 
 		if ($this->beforeDelete($cascade)) {
 			$filters = $this->Behaviors->trigger(
-				'beforeDelete', 
-				array(&$this, $cascade), 
+				'beforeDelete',
+				array(&$this, $cascade),
 				array('break' => true, 'breakOn' => false)
 			);
 			if (!$filters || !$this->exists()) {
@@ -2689,7 +2689,7 @@ class Model extends Object {
 	protected function _filterResults($results, $primary = true) {
 		$return = $this->Behaviors->trigger(
 			'afterFind',
-			array(&$this, $results, $primary), 
+			array(&$this, $results, $primary),
 			array('modParams' => true)
 		);
 		if ($return !== true) {
