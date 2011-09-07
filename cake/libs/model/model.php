@@ -1463,7 +1463,7 @@ class Model extends Overloadable {
 		}
 
 		if ($options['callbacks'] === true || $options['callbacks'] === 'before') {
-			$result = $this->Behaviors->trigger($this, 'beforeSave', array($options), array(
+			$result = $this->Behaviors->trigger('beforeSave', array(&$this, $options), array(
 				'break' => true, 'breakOn' => false
 			));
 			if (!$result || !$this->beforeSave($options)) {
@@ -1547,7 +1547,7 @@ class Model extends Overloadable {
 				$success = $this->data;
 			}
 			if ($options['callbacks'] === true || $options['callbacks'] === 'after') {
-				$this->Behaviors->trigger($this, 'afterSave', array($created, $options));
+				$this->Behaviors->trigger('afterSave', array(&$this, $created, $options));
 				$this->afterSave($created);
 			}
 			if (!empty($this->data)) {
@@ -1993,9 +1993,11 @@ class Model extends Overloadable {
 		$id = $this->id;
 
 		if ($this->beforeDelete($cascade)) {
-			$filters = $this->Behaviors->trigger($this, 'beforeDelete', array($cascade), array(
-				'break' => true, 'breakOn' => false
-			));
+			$filters = $this->Behaviors->trigger(
+				'beforeDelete', 
+				array(&$this, $cascade), 
+				array('break' => true, 'breakOn' => false)
+			);
 			if (!$filters || !$this->exists()) {
 				return false;
 			}
@@ -2016,7 +2018,7 @@ class Model extends Overloadable {
 				if (!empty($this->belongsTo)) {
 					$this->updateCounterCache($keys[$this->alias]);
 				}
-				$this->Behaviors->trigger($this, 'afterDelete');
+				$this->Behaviors->trigger('afterDelete', array(&$this));
 				$this->afterDelete();
 				$this->_clearCache();
 				$this->id = false;
@@ -2282,9 +2284,8 @@ class Model extends Overloadable {
 
 		if ($query['callbacks'] === true || $query['callbacks'] === 'before') {
 			$return = $this->Behaviors->trigger(
-				$this, 
-				'beforeFind', 
-				array($query), 
+				'beforeFind',
+				array(&$this, $query),
 				array('break' => true, 'breakOn' => false, 'modParams' => true
 			));
 			$query = (is_array($return)) ? $return : $query;
@@ -2542,9 +2543,8 @@ class Model extends Overloadable {
  */
 	protected function _filterResults($results, $primary = true) {
 		$return = $this->Behaviors->trigger(
-			$this, 
-			'afterFind', 
-			array($results, $primary), 
+			'afterFind',
+			array(&$this, $results, $primary), 
 			array('modParams' => true)
 		);
 		if ($return !== true) {
@@ -2668,9 +2668,8 @@ class Model extends Overloadable {
 	public function invalidFields($options = array()) {
 		if (
 			!$this->Behaviors->trigger(
-				$this,
 				'beforeValidate',
-				array($options),
+				array(&$this, $options),
 				array('break' => true, 'breakOn' => false)
 			) ||
 			$this->beforeValidate($options) === false
