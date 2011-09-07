@@ -25,6 +25,7 @@
 App::import('Core', array('ClassRegistry', 'Validation', 'Set', 'String'));
 App::import('Model', 'ModelBehavior', false);
 App::import('Model', 'ConnectionManager', false);
+App::uses('Xml', 'Utility');
 
 /**
  * Object-relational mapper.
@@ -1028,7 +1029,11 @@ class Model extends Object {
 			return;
 		}
 		if (is_object($one)) {
-			$one = Set::reverse($one);
+			if ($one instanceof SimpleXMLElement || $one instanceof DOMNode) {
+				$one = $this->_normalizeXmlData(Xml::toArray($one));
+			} else {
+				$one = Set::reverse($one);
+			}
 		}
 
 		if (is_array($one)) {
@@ -1063,6 +1068,26 @@ class Model extends Object {
 			}
 		}
 		return $data;
+	}
+
+/**
+ * Normalize Xml::toArray() to use in Model::save()
+ *
+ * @param array $xml XML as array
+ * @return array
+ */
+	protected function _normalizeXmlData(array $xml) {
+		$return = array();
+		foreach ($xml as $key => $value) {
+			if (is_array($value)) {
+				$return[Inflector::camelize($key)] = $this->_normalizeXmlData($value);
+			} elseif ($key[0] === '@') {
+				$return[substr($key, 1)] = $value;
+			} else {
+				$return[$key] = $value;
+			}
+		}
+		return $return;
 	}
 
 /**
@@ -1238,6 +1263,23 @@ class Model extends Object {
 
 		if ($this->_schema != null) {
 			return isset($this->_schema[$name]);
+		}
+		return false;
+	}
+
+/**
+ * Check that a method is callable on a model.  This will check both the model's own methods, its
+ * inherited methods and methods that could be callable through behaviors.
+ *
+ * @param string $method The method to be called.
+ * @return boolean True on method being callable.
+ */
+	public function hasMethod($method) {
+		if (method_exists($this, $method)) {
+			return true;
+		}
+		if ($this->Behaviors->hasMethod($method)) {
+			return true;
 		}
 		return false;
 	}
