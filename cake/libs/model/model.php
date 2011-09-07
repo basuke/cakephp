@@ -714,8 +714,7 @@ class Model extends Overloadable {
 		if ($result !== array('unhandled')) {
 			return $result;
 		}
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
-		$return = $db->query($method, $params, $this);
+		$return = $this->getDataSource()->query($method, $params, $this);
 		return $return;
 	}
 
@@ -963,7 +962,7 @@ class Model extends Overloadable {
  */
 	public function setSource($tableName) {
 		$this->setDataSource($this->useDbConfig);
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
+		$db = ConnectionManager::getDataSource($this->useDbConfig);
 		$db->cacheSources = ($this->cacheSources && $db->cacheSources);
 
 		if ($db->isInterfaceSupported('listSources')) {
@@ -1061,8 +1060,7 @@ class Model extends Overloadable {
 			$dateFields = array('Y' => 'year', 'm' => 'month', 'd' => 'day', 'H' => 'hour', 'i' => 'min', 's' => 'sec');
 			$timeFields = array('H' => 'hour', 'i' => 'min', 's' => 'sec');
 
-			$db =& ConnectionManager::getDataSource($this->useDbConfig);
-			$format = $db->columns[$type]['format'];
+			$format = $this->getDataSource()->columns[$type]['format'];
 			$date = array();
 
 			if (isset($data['hour']) && isset($data['meridian']) && $data['hour'] != 12 && 'pm' == $data['meridian']) {
@@ -1122,7 +1120,7 @@ class Model extends Overloadable {
  */
 	public function schema($field = false) {
 		if (!is_array($this->_schema) || $field === true) {
-			$db =& ConnectionManager::getDataSource($this->useDbConfig);
+			$db = $this->getDataSource();
 			$db->cacheSources = ($this->cacheSources && $db->cacheSources);
 			if ($db->isInterfaceSupported('describe') && $this->useTable !== false) {
 				$this->_schema = $db->describe($this, $field);
@@ -1164,7 +1162,7 @@ class Model extends Overloadable {
  * @return string Column type
  */
 	public function getColumnType($column) {
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
+		$db = $this->getDataSource();
 		$cols = $this->schema();
 		$model = null;
 
@@ -1446,7 +1444,7 @@ class Model extends Overloadable {
 			return false;
 		}
 
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
+		$db = $this->getDataSource();
 
 		foreach ($dateFields as $updateCol) {
 			if ($this->hasField($updateCol) && !in_array($updateCol, $fields)) {
@@ -1763,7 +1761,7 @@ class Model extends Overloadable {
 		if (empty($data)) {
 			$data = $this->data;
 		}
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
+		$db = $this->getDataSource();
 
 		$options = array_merge(array('validate' => 'first', 'atomic' => true), $options);
 		$this->validationErrors = $validationErrors = array();
@@ -1977,8 +1975,7 @@ class Model extends Overloadable {
  * @link http://book.cakephp.org/view/1031/Saving-Your-Data
  */
 	public function updateAll($fields, $conditions = true) {
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
-		return $db->update($this, $fields, null, $conditions);
+		return $this->getDataSource()->update($this, $fields, null, $conditions);
 	}
 
 /**
@@ -2002,7 +1999,7 @@ class Model extends Overloadable {
 			if (!$filters || !$this->exists()) {
 				return false;
 			}
-			$db =& ConnectionManager::getDataSource($this->useDbConfig);
+			$db = $this->getDataSource();
 
 			$this->_deleteDependent($id, $cascade);
 			$this->_deleteLinks($id);
@@ -2106,7 +2103,7 @@ class Model extends Overloadable {
 		if (empty($conditions)) {
 			return false;
 		}
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
+		$db = $this->getDataSource();
 
 		if (!$cascade && !$callbacks) {
 			return $db->delete($this, $conditions);
@@ -2304,11 +2301,7 @@ class Model extends Overloadable {
 			}
 		}
 
-		if (!$db =& ConnectionManager::getDataSource($this->useDbConfig)) {
-			return false;
-		}
-
-		$results = $db->read($this, $query);
+		$results = $this->getDataSource()->read($this, $query);
 		$this->resetAssociations();
 
 		if ($query['callbacks'] === true || $query['callbacks'] === 'after') {
@@ -2358,7 +2351,7 @@ class Model extends Overloadable {
  */
 	protected function _findCount($state, $query, $results = array()) {
 		if ($state == 'before') {
-			$db =& ConnectionManager::getDataSource($this->useDbConfig);
+			$db = $this->getDataSource();
 			if (empty($query['fields'])) {
 				$query['fields'] = $db->calculate($this, 'count');
 			} elseif (is_string($query['fields'])  && !preg_match('/count/i', $query['fields'])) {
@@ -2639,7 +2632,7 @@ class Model extends Overloadable {
  */
 	public function query($sql) {
 		$params = func_get_args();
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
+		$db = $this->getDataSource();
 		return call_user_func_array(array(&$db, 'query'), $params);
 	}
 
@@ -2973,8 +2966,7 @@ class Model extends Overloadable {
  * @return integer Number of rows
  */
 	public function getNumRows() {
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
-		return $db->lastNumRows();
+		return $this->getDataSource()->lastNumRows();
 	}
 
 /**
@@ -2983,8 +2975,7 @@ class Model extends Overloadable {
  * @return integer Number of rows
  */
 	public function getAffectedRows() {
-		$db =& ConnectionManager::getDataSource($this->useDbConfig);
-		return $db->lastAffected();
+		return $this->getDataSource()->lastAffected();
 	}
 
 /**
