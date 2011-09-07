@@ -958,6 +958,7 @@ class Model extends Overloadable {
  * Sets a custom table for your controller class. Used by your controller to select a database table.
  *
  * @param string $tableName Name of the custom table
+ * @throws MissingTableException when database table $tableName is not found on data source
  * @return void
  */
 	public function setSource($tableName) {
@@ -968,11 +969,10 @@ class Model extends Overloadable {
 		if ($db->isInterfaceSupported('listSources')) {
 			$sources = $db->listSources();
 			if (is_array($sources) && !in_array(strtolower($this->tablePrefix . $tableName), array_map('strtolower', $sources))) {
-				return $this->cakeError('missingTable', array(array(
-					'className' => $this->alias,
+				throw new MissingTableException(array(
 					'table' => $this->tablePrefix . $tableName,
-					'code' => 500
-				)));
+					'class' => $this->alias
+				));
 			}
 			$this->_schema = null;
 		}
@@ -2983,6 +2983,7 @@ class Model extends Overloadable {
  *
  * @param string $dataSource The name of the DataSource, as defined in app/Config/database.php
  * @return boolean True on success
+ * @throws MissingConnectionException
  */
 	public function setDataSource($dataSource = null) {
 		$oldConfig = $this->useDbConfig;
@@ -3002,7 +3003,7 @@ class Model extends Overloadable {
 		}
 
 		if (empty($db) || !is_object($db)) {
-			return $this->cakeError('missingConnection', array(array('code' => 500, 'className' => $this->alias)));
+			throw new MissingConnectionException(array('class' => $this->name));
 		}
 	}
 
