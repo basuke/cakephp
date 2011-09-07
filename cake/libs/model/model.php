@@ -787,17 +787,17 @@ class Model extends Object {
 						if (strpos($assoc, '.') !== false) {
 							$value = $this->{$type}[$assoc];
 							unset($this->{$type}[$assoc]);
-							list($plugin, $assoc) = pluginSplit($assoc, true);
+							list($plugin, $assoc) = pluginSplit($assoc);
 							$this->{$type}[$assoc] = $value;
 						}
 					}
 					$className =  $assoc;
 
 					if (!empty($value['className'])) {
-						list($plugin, $className) = pluginSplit($value['className'], true);
+						list($plugin, $className) = pluginSplit($value['className']);
 						$this->{$type}[$assoc]['className'] = $className;
 					}
-					$this->_constructLinkedModel($assoc, $plugin . $className);
+					$this->_constructLinkedModel($assoc, $className, $plugin);
 				}
 				$this->_generateAssociation($type);
 			}
@@ -817,16 +817,19 @@ class Model extends Object {
  * 					usage: $this->ModelName->modelMethods();
  * @return void
  */
-	protected function _constructLinkedModel($assoc, $className = null) {
+	protected function _constructLinkedModel($assoc, $className = null, $plugin = null) {
 		if (empty($className)) {
 			$className = $assoc;
 		}
 
 		if (!isset($this->{$assoc}) || $this->{$assoc}->name !== $className) {
+			if ($plugin) {
+				$plugin .= '.';
+			}
 			$model = array('class' => $className, 'alias' => $assoc);
 			$this->{$assoc} = ClassRegistry::init($model);
-			if (strpos($className, '.') !== false) {
-				ClassRegistry::addObject($className, $this->{$assoc});
+			if ($plugin) {
+				ClassRegistry::addObject($plugin. $className, $this->{$assoc});
 			}
 			if ($assoc) {
 				$this->tableToModel[$this->{$assoc}->table] = $assoc;
@@ -895,7 +898,6 @@ class Model extends Object {
 				$plugin = null;
 				if (strpos($joinClass, '.') !== false) {
 					list($plugin, $joinClass) = explode('.', $joinClass);
-					$plugin .= '.';
 					$this->{$type}[$assocKey]['with'] = $joinClass;
 				}
 
@@ -906,7 +908,7 @@ class Model extends Object {
 						'ds' => $this->useDbConfig
 					));
 				} else {
-					$this->_constructLinkedModel($joinClass, $plugin . $joinClass);
+					$this->_constructLinkedModel($joinClass, $joinClass, $plugin);
 					$this->{$type}[$assocKey]['joinTable'] = $this->{$joinClass}->table;
 				}
 
