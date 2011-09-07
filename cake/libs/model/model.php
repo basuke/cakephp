@@ -552,6 +552,14 @@ class Model extends Object {
 	protected $_insertID = null;
 
 /**
+ * Has the datasource been configured.
+ *
+ * @var boolean
+ * @see Model::getDataSource
+ */
+	protected $_sourceConfigured = false;
+
+/**
  * List of valid finder method options, supplied as the first parameter to find().
  *
  * @var array
@@ -647,16 +655,16 @@ class Model extends Object {
 		$this->Behaviors = new BehaviorCollection();
 
 		if ($this->useTable !== false) {
-			$this->setDataSource($ds);
 
 			if ($this->useTable === null) {
 				$this->useTable = Inflector::tableize($this->name);
 			}
-			$this->setSource($this->useTable);
 
 			if ($this->displayField == null) {
 				$this->displayField = $this->hasField(array('title', 'name', $this->primaryKey));
 			}
+			$this->table = $this->useTable;
+			$this->tableToModel[$this->table] = $this->alias;
 		} elseif ($this->table === false) {
 			$this->table = Inflector::tableize($this->name);
 		}
@@ -943,7 +951,6 @@ class Model extends Object {
 		}
 		$this->table = $this->useTable = $tableName;
 		$this->tableToModel[$this->table] = $this->alias;
-		$this->schema();
 	}
 
 /**
@@ -2967,6 +2974,10 @@ class Model extends Object {
  * @return DataSource A DataSource object
  */
 	public function getDataSource() {
+		if (!$this->_sourceConfigured && $this->useTable !== false) {
+			$this->_sourceConfigured = true;
+			$this->setSource($this->useTable);
+		}
 		return ConnectionManager::getDataSource($this->useDbConfig);
 	}
 
