@@ -698,6 +698,69 @@ class Model extends Object {
 	}
 
 /**
+ * Handles the lazy loading of model associations by lookin in the association arrays for the requested variable
+ *
+ * @param string $name variable tested for existance in class
+ * @return boolean true if the variable exists (if is a not loaded model association it will be created), false otherwise
+ */
+	public function __isset($name) {
+		$className = false;
+
+		foreach ($this->_associations as $type) {
+			if (isset($name, $this->{$type}[$name])) {
+				$className = empty($this->{$type}[$name]['className']) ? $name : $this->{$type}[$name]['className'];
+				break;
+			} else if ($type == 'hasAndBelongsToMany') {
+				foreach ($this->{$type} as $k => $relation) {
+					if (empty($relation['with'])) {
+						continue;
+					}
+					if (is_array($relation['with'])) {
+						if (key($relation['with']) === $name) {
+							$className = $name;
+						}
+					} else {
+						list($plugin, $class) = pluginSplit($relation['with']);
+						if ($class === $name) {
+							$className = $relation['with'];
+						}
+					}
+					if ($className) {
+						$assocKey = $k;
+						$dynamic = !empty($relation['dynamicWith']);
+						break(2);
+					}
+				}
+			}
+	    }
+
+		if (!$className) {
+			return false;
+		}
+
+		list($plugin, $className) = pluginSplit($className);
+
+		if (!ClassRegistry::isKeySet($className) && !empty($dynamic)) {
+			$this->{$className} = new AppModel(array(
+				'name' => $className,
+				'table' => $this->hasAndBelongsToMany[$assocKey]['joinTable'],
+				'ds' => $this->useDbConfig
+			));
+		} else {
+			$this->_constructLinkedModel($name, $className, $plugin);
+		}
+
+		if (!empty($assocKey)) {
+			$this->hasAndBelongsToMany[$assocKey]['joinTable'] = $this->{$name}->table;
+			if (count($this->{$name}->schema()) <= 2 && $this->{$name}->primaryKey !== false) {
+				$this->{$name}->primaryKey = $this->hasAndBelongsToMany[$assocKey]['foreignKey'];
+			}
+		}
+
+		return true;
+	}
+
+/**
  * Returns the value of the requested variable if it can be set by __isset()
  *
  * @param string $name variable requested for it's value or reference
@@ -745,7 +808,9 @@ class Model extends Object {
 				}
 				$modelName = $assocName;
 				$this->{$assoc}[$assocName] = $value;
-
+				if (property_exists($this, $assocName)) {
+					unset($this->{$assocName});
+				}
 				if ($reset === false && isset($this->__backAssociation[$assoc])) {
 					$this->__backAssociation[$assoc][$assocName] = $value;
 				}
@@ -816,21 +881,12 @@ class Model extends Object {
 						$this->{$type}[$assoc] = $value;
 
 						if (strpos($assoc, '.') !== false) {
-							$value = $this->{$type}[$assoc];
-							unset($this->{$type}[$assoc]);
 							list($plugin, $assoc) = pluginSplit($assoc);
-							$this->{$type}[$assoc] = $value;
+							$this->{$type}[$assoc] = array('className' => $plugin. '.' . $assoc);
 						}
 					}
-					$className =  $assoc;
-
-					if (!empty($value['className'])) {
-						list($plugin, $className) = pluginSplit($value['className']);
-						$this->{$type}[$assoc]['className'] = $className;
-					}
-					$this->_constructLinkedModel($assoc, $className, $plugin);
+					$this->_generateAssociation($type, $assoc);
 				}
-				$this->_generateAssociation($type);
 			}
 		}
 	}
@@ -872,81 +928,57 @@ class Model extends Object {
  * Build an array-based association from string.
  *
  * @param string $type 'belongsTo', 'hasOne', 'hasMany', 'hasAndBelongsToMany'
+ * @param string $assocKey
  * @return void
  */
-	protected function _generateAssociation($type) {
-		foreach ($this->{$type} as $assocKey => $assocData) {
-			$class = $assocKey;
-			$dynamicWith = false;
+	protected function _generateAssociation($type, $assocKey) {
+		$class = $assocKey;
+		$dynamicWith = false;
 
-			foreach ($this->_associationKeys[$type] as $key) {
+		foreach ($this->_associationKeys[$type] as $key) {
 
-				if (!isset($this->{$type}[$assocKey][$key]) || $this->{$type}[$assocKey][$key] === null) {
-					$data = '';
+			if (!isset($this->{$type}[$assocKey][$key]) || $this->{$type}[$assocKey][$key] === null) {
+				$data = '';
 
-					switch ($key) {
-						case 'fields':
-							$data = '';
-						break;
+				switch ($key) {
+					case 'fields':
+						$data = '';
+					break;
 
-						case 'foreignKey':
-							$data = (($type == 'belongsTo') ? Inflector::underscore($assocKey) : Inflector::singularize($this->table)) . '_id';
-						break;
+					case 'foreignKey':
+						$data = (($type == 'belongsTo') ? Inflector::underscore($assocKey) : Inflector::singularize($this->table)) . '_id';
+					break;
 
-						case 'associationForeignKey':
-							$data = Inflector::singularize($this->{$class}->table) . '_id';
-						break;
+					case 'associationForeignKey':
+						$data = Inflector::singularize($this->{$class}->table) . '_id';
+					break;
 
-						case 'with':
-							$data = Inflector::camelize(Inflector::singularize($this->{$type}[$assocKey]['joinTable']));
-							$dynamicWith = true;
-						break;
+					case 'with':
+						$data = Inflector::camelize(Inflector::singularize($this->{$type}[$assocKey]['joinTable']));
+						$dynamicWith = true;
+					break;
 
-						case 'joinTable':
-							$tables = array($this->table, $this->{$class}->table);
-							sort ($tables);
-							$data = $tables[0] . '_' . $tables[1];
-						break;
+					case 'joinTable':
+						$tables = array($this->table, $this->{$class}->table);
+						sort ($tables);
+						$data = $tables[0] . '_' . $tables[1];
+					break;
 
-						case 'className':
-							$data = $class;
-						break;
+					case 'className':
+						$data = $class;
+					break;
 
-						case 'unique':
-							$data = true;
-						break;
-					}
-					$this->{$type}[$assocKey][$key] = $data;
+					case 'unique':
+						$data = true;
+					break;
 				}
+				$this->{$type}[$assocKey][$key] = $data;
 			}
 
-			if (!empty($this->{$type}[$assocKey]['with'])) {
-				$joinClass = $this->{$type}[$assocKey]['with'];
-				if (is_array($joinClass)) {
-					$joinClass = key($joinClass);
-				}
-
-				$plugin = null;
-				if (strpos($joinClass, '.') !== false) {
-					list($plugin, $joinClass) = explode('.', $joinClass);
-					$this->{$type}[$assocKey]['with'] = $joinClass;
-				}
-
-				if (!ClassRegistry::isKeySet($joinClass) && $dynamicWith === true) {
-					$this->{$joinClass} = new AppModel(array(
-						'name' => $joinClass,
-						'table' => $this->{$type}[$assocKey]['joinTable'],
-						'ds' => $this->useDbConfig
-					));
-				} else {
-					$this->_constructLinkedModel($joinClass, $joinClass, $plugin);
-					$this->{$type}[$assocKey]['joinTable'] = $this->{$joinClass}->table;
-				}
-
-				if (count($this->{$joinClass}->schema()) <= 2 && $this->{$joinClass}->primaryKey !== false) {
-					$this->{$joinClass}->primaryKey = $this->{$type}[$assocKey]['foreignKey'];
-				}
+			if ($dynamicWith) {
+				$this->{$type}[$assocKey]['dynamicWith'] = true;
 			}
+
 		}
 	}
 
