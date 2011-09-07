@@ -208,6 +208,14 @@ class Model extends Object {
  */
 	public $validationErrors = array();
 
+
+/**
+ * Name of the validation string domain to use when translating validation errors.
+ *
+ * @var string
+ */
+	public $validationDomain = null;
+
 /**
  * Database table prefix for tables in model.
  *
@@ -2691,6 +2699,10 @@ class Model extends Object {
 				}
 				$validator = array_merge($default, $validator);
 
+				$validationDomain = $this->validationDomain;
+				if (empty($validationDomain)) {
+					$validationDomain = 'default';
+				}
 				if (isset($validator['message'])) {
 					$message = $validator['message'];
 				} else {
@@ -2710,7 +2722,7 @@ class Model extends Object {
 					);
 
 					if ($required) {
-						$this->invalidate($fieldName, $message);
+						$this->invalidate($fieldName, __d($validationDomain, $message));
 						if ($validator['last']) {
 							break;
 						}
@@ -2754,8 +2766,15 @@ class Model extends Object {
 								} elseif (is_numeric($index) && count($ruleSet) > 1) {
 									$validator['message'] = $index + 1;
 								} else {
-									$validator['message'] = $message;
+									$validator['message'] = __d($validationDomain, $message);
 								}
+							} elseif (is_array($validator['message'])) {
+								if (count($validator['message']) > 1) {
+									$args = array_slice($validator['message'], 1);
+								} else {
+									$args = $validator['rule'];
+								}
+								$validator['message'] = __d($validationDomain, $validator['message'][0], $args);
 							}
 							$this->invalidate($fieldName, $validator['message']);
 
@@ -2820,7 +2839,7 @@ class Model extends Object {
 		if (!is_array($this->validationErrors)) {
 			$this->validationErrors = array();
 		}
-		$this->validationErrors[$field] = $value;
+		$this->validationErrors[$field] []= $value;
 	}
 
 /**
