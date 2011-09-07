@@ -857,10 +857,10 @@ class Model extends Object {
 			if ($plugin) {
 				$plugin .= '.';
 			}
-			$model = array('class' => $className, 'alias' => $assoc);
+			$model = array('class' => $plugin . $className, 'alias' => $assoc);
 			$this->{$assoc} = ClassRegistry::init($model);
 			if ($plugin) {
-				ClassRegistry::addObject($plugin. $className, $this->{$assoc});
+				ClassRegistry::addObject($plugin . $className, $this->{$assoc});
 			}
 			if ($assoc) {
 				$this->tableToModel[$this->{$assoc}->table] = $assoc;
