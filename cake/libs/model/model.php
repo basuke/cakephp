@@ -669,7 +669,7 @@ class Model extends Object {
 			}
 
 			if ($this->displayField == null) {
-				$this->displayField = $this->hasField(array('title', 'name', $this->primaryKey));
+				unset($this->displayField);
 			}
 			$this->table = $this->useTable;
 			$this->tableToModel[$this->table] = $this->alias;
@@ -695,6 +695,21 @@ class Model extends Object {
 		}
 		$return = $this->getDataSource()->query($method, $params, $this);
 		return $return;
+	}
+
+/**
+ * Returns the value of the requested variable if it can be set by __isset()
+ *
+ * @param string $name variable requested for it's value or reference
+ * @return mixed value of requested variable if it is set
+ */
+	public function __get($name) {
+		if ($name === 'displayField') {
+			return $this->displayField = $this->hasField(array('title', 'name', $this->primaryKey));
+		}
+		if (isset($this->{$name})) {
+			return $this->{$name};
+		}
 	}
 
 /**
