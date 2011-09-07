@@ -22,9 +22,12 @@
 /**
  * Included libs
  */
-App::import('Core', array('ClassRegistry', 'Validation', 'Set', 'String'));
-App::import('Model', 'ModelBehavior', false);
-App::import('Model', 'ConnectionManager', false);
+App::uses('ClassRegistry', 'Utility');
+App::uses('Validation', 'Utility');
+App::uses('String', 'Utility');
+App::uses('BehaviorCollection', 'Model');
+App::uses('ModelBehavior', 'Model');
+App::uses('ConnectionManager', 'Model');
 App::uses('Xml', 'Utility');
 
 /**
@@ -552,6 +555,27 @@ class Model extends Object {
  * @var array
  */
 	public $__backAssociation = array();
+
+/**
+ * Back inner association
+ *
+ * @var array
+ */
+	public $__backInnerAssociation = array();
+
+/**
+ * Back original association
+ *
+ * @var array
+ */
+	public $__backOriginalAssociation = array();
+
+/**
+ * Back containable association
+ *
+ * @var array
+ */
+	public $__backContainableAssociation = array();
 
 /**
  * The ID of the model record that was last inserted.
